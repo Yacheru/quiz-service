@@ -1,0 +1,4 @@
+.idea
+build
+deploy/pg-data
+logs/*/*.log

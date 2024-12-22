@@ -1,10 +1,38 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Результаты теста</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-$END$
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<div class="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl text-center">
+    <h2 id="variantTitle" class="text-2xl font-bold mb-6 text-gray-800">Загрузка...</h2>
+    <p id="resultText" class="text-lg text-gray-700">Пожалуйста, подождите...</p>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const urlParts = window.location.pathname.split('/');
+        const userUUID = urlParts[urlParts.length - 4];
+        const variantName = urlParts[urlParts.length - 2];
+
+        if (!userUUID || !variantName) {
+            showError('Некорректный путь.');
+            return;
+        }
+
+        const variantTitle = decodeURIComponent(variantName.replace(/\+/g, ' '));
+        document.getElementById('variantTitle').textContent = `Результаты теста: ${variantTitle}`
+        document.getElementById('resultText').innerHTML = `Вы набрали <span class="text-blue-500 font-bold text-xl">{{ .correctAnswers }}</span> правильных ответов!`;
+
+        function showError(message) {
+            document.getElementById('variantTitle').textContent = 'Ошибка';
+            document.getElementById('resultText').textContent = message;
+            document.getElementById('resultText').classList.add('text-red-500');
+        }
+    });
+</script>
 </body>
 </html>

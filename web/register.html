@@ -2,9 +2,138 @@
 <html lang="en">
 <head>
     <meta charset="UTF-8">
-    <title>QUIZ</title>
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Registration/Login</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<div id="formContainer" class="bg-white p-8 rounded-lg shadow-md w-full max-w-md">
+    <h2 class="text-2xl font-bold mb-4 text-gray-800" id="formTitle">Регистрация</h2>
+    <form id="authForm">
+        <div class="mb-4">
+            <label for="login" class="block text-sm font-medium text-gray-700">Логин</label>
+            <input type="text" id="login" name="login" required
+                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+        </div>
+        <div class="mb-4">
+            <label for="password" class="block text-sm font-medium text-gray-700">Пароль</label>
+            <input type="password" id="password" name="password" required
+                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+        </div>
+        <button type="submit"
+                class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">Отправить</button>
+    </form>
+    <p id="errorMessage" class="text-red-500 text-sm mt-2 hidden"></p>
+    <p class="mt-4 text-center text-sm text-gray-600">
+        Уже есть аккаунт? <button id="toggleToLogin" class="text-blue-600 hover:underline">Войти</button>
+    </p>
+</div>
 
+<div id="loginFormContainer" class="bg-white p-8 rounded-lg shadow-md w-full max-w-md hidden">
+    <h2 class="text-2xl font-bold mb-4 text-gray-800" id="formTitle">Вход</h2>
+    <form id="loginForm">
+        <div class="mb-4">
+            <label for="loginLogin" class="block text-sm font-medium text-gray-700">Логин</label>
+            <input type="text" id="loginLogin" name="login" required
+                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+        </div>
+        <div class="mb-4">
+            <label for="loginPassword" class="block text-sm font-medium text-gray-700">Пароль</label>
+            <input type="password" id="loginPassword" name="password" required
+                   class="mt-1 block w-full border border-gray-300 rounded-md shadow-sm p-2">
+        </div>
+        <button type="submit"
+                class="w-full bg-blue-600 text-white font-bold py-2 px-4 rounded hover:bg-blue-700">Войти</button>
+    </form>
+    <p id="loginErrorMessage" class="text-red-500 text-sm mt-2 hidden"></p>
+    <p class="mt-4 text-center text-sm text-gray-600">
+        Нет аккаунта? <button id="toggleToRegister" class="text-blue-600 hover:underline">Зарегистрироваться</button>
+    </p>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', () => {
+        const userUUID = localStorage.getItem('userUUID');
+        const formContainer = document.getElementById('formContainer');
+        const loginFormContainer = document.getElementById('loginFormContainer');
+        const toggleToLogin = document.getElementById('toggleToLogin');
+        const toggleToRegister = document.getElementById('toggleToRegister');
+
+        if (userUUID) {
+            return window.location.href = `/quiz/${userUUID}/variant`
+        } else {
+            formContainer.classList.remove('hidden');
+
+            const authForm = document.getElementById('authForm');
+            authForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const login = document.getElementById('login').value;
+                const password = document.getElementById('password').value;
+                const errorMessage = document.getElementById('errorMessage');
+
+                try {
+                    const response = await fetch('http://localhost:8080/quiz/register', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ "login": login, "password": password })
+                    });
+
+                    if (!response.ok) {
+                        if (response.status >= 400 || response.status <= 499) {
+                            throw new Error('Пользователь уже зарегистрирован')
+                        }
+                        throw new Error('Ошибка регистрации');
+                    }
+
+                    const data = await response.json();
+                    localStorage.setItem('userUUID', data['data']['uuid']);
+                    window.location.href = `/quiz/${data['data']['uuid']}/variant/list`;
+                } catch (error) {
+                    errorMessage.textContent = error.message;
+                    errorMessage.classList.remove('hidden');
+                }
+            });
+
+            const loginForm = document.getElementById('loginForm');
+            loginForm.addEventListener('submit', async (e) => {
+                e.preventDefault();
+
+                const login = document.getElementById('loginLogin').value;
+                const password = document.getElementById('loginPassword').value;
+                const loginErrorMessage = document.getElementById('loginErrorMessage');
+
+                try {
+                    const response = await fetch('http://localhost:8080/quiz/login', {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ "login": login, "password": password })
+                    });
+
+                    if (!response.ok) {
+                        throw new Error('Ошибка входа');
+                    }
+
+                    const data = await response.json();
+                    localStorage.setItem('userUUID', data['data']['uuid']);
+                    window.location.href = `/quiz/${data['data']['uuid']}/variant/`;
+                } catch (error) {
+                    loginErrorMessage.textContent = error.message;
+                    loginErrorMessage.classList.remove('hidden');
+                }
+            });
+
+            toggleToLogin.addEventListener('click', () => {
+                formContainer.classList.add('hidden');
+                loginFormContainer.classList.remove('hidden');
+            });
+
+            toggleToRegister.addEventListener('click', () => {
+                loginFormContainer.classList.add('hidden');
+                formContainer.classList.remove('hidden');
+            });
+        }
+    });
+</script>
 </body>
 </html>

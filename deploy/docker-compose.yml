@@ -1,0 +1,40 @@
+name: "quiz-compose"
+
+services:
+  quiz-service:
+    container_name: quiz-service
+    user: root
+    ports:
+      - ${QUIZ_SERVICE_PORT_NUMBER}:${QUIZ_SERVICE_PORT_NUMBER}
+    build:
+      context: ..
+      dockerfile: ./deploy/Dockerfile
+    depends_on:
+      postgres:
+        condition: service_healthy
+    networks:
+      - quiz-network
+
+  postgres:
+    user: root
+    image: bitnami/postgresql:16
+    container_name: postgres
+    ports:
+      - ${POSTGRESQL_PORT_NUMBER}:${POSTGRESQL_PORT_NUMBER}
+    environment:
+      POSTGRESQL_USERNAME: ${POSTGRESQL_USERNAME:?error}
+      POSTGRESQL_PASSWORD: ${POSTGRESQL_PASSWORD:?error}
+      POSTGRESQL_DATABASE: ${POSTGRESQL_DATABASE:?error}
+    volumes:
+      - ./pg-data:/bitnami/postgresql
+    healthcheck:
+      test: [ "CMD-SHELL", "sh -c 'pg_isready -U ${POSTGRESQL_USERNAME} -d ${POSTGRESQL_DATABASE}'" ]
+      interval: 30s
+      timeout: 60s
+      retries: 5
+    networks:
+      - quiz-network
+
+networks:
+  quiz-network:
+    driver: bridge

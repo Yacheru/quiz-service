@@ -2,19 +2,19 @@
   "debug": true,
   "port": 8080,
   "entry": "/quiz",
+  "password_salt": "0R^g#Tj3",
 
   "db": {
     "port": 5432,
-    "host": "quiz-postgres",
+    "host": "postgres",
     "user": "someuser",
     "password": "veryveryverystrongpassword",
     "database": "db_quiz"
   },
 
   "log": {
-    "httpLoggerPath": "./logs/http",
-    "dbLoggerPath": "./logs/db",
-    "maxSizeMb": 10,
-    "compressOldFiles": true
+    "http_logger_path": "./logs/http",
+    "postgres_logger_path": "./logs/postgresql",
+    "quiz_logger_path": "./logs/quiz"
   }
 }

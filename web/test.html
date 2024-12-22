@@ -1,10 +1,144 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Прохождение теста</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-$END$
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<div class="absolute top-4 right-4">
+    <button id="logoutButton" class="bg-red-500 text-white px-4 py-2 rounded shadow hover:bg-red-600">Выйти</button>
+</div>
+<div class="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl">
+    <h2 id="variantTitle" class="text-2xl font-bold mb-4 text-gray-800">Загрузка...</h2>
+    <div id="questionContainer" class="hidden">
+        <p id="questionText" class="text-lg font-medium mb-4">Вопрос</p>
+        <div id="answers" class="space-y-2"></div>
+        <button id="submitButton" class="mt-4 bg-blue-500 text-white px-4 py-2 rounded hover:bg-blue-600">Отправить</button>
+    </div>
+    <p id="errorMessage" class="text-red-500 text-sm mt-2 hidden"></p>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const urlParts = window.location.pathname.split('/');
+        const userUUID = urlParts[urlParts.length - 4];
+        const variantName = urlParts[urlParts.length - 2];
+        const errorMessage = document.getElementById('errorMessage');
+        const questionContainer = document.getElementById('questionContainer');
+
+        if (!userUUID || !variantName) {
+            showError('Некорректный путь.');
+            return;
+        }
+
+        document.getElementById('logoutButton').addEventListener('click', async () => {
+            await fetch('http://localhost:8080/logout', { method: 'POST' });
+            localStorage.removeItem('userUUID');
+            window.location.href = '/quiz/';
+        });
+
+        try {
+            const response = await fetch(`http://localhost:8080/quiz/${userUUID}/variant/${variantName}/start`, {
+                method: 'POST'
+            });
+
+            if (response.status === 409) {
+                showError('Вы уже проходили этот тест.');
+                document.getElementById('variantTitle').textContent = `Ошибка`;
+                return
+            }
+
+            if (!response.ok) {
+                throw new Error('Не удалось загрузить тест.');
+            }
+
+            const { data: variant } = await response.json();
+            document.getElementById('variantTitle').textContent = `Вариант: ${variant.name}`;
+
+            let currentQuestionIndex = 0;
+            const questions = variant.questions;
+
+            if (questions.length === 0) {
+                showError('В этом тесте нет вопросов.');
+                return;
+            }
+
+            renderQuestion(questions[currentQuestionIndex]);
+
+            document.getElementById('submitButton').addEventListener('click', async () => {
+                const selectedAnswer = document.querySelector('input[name="answerOptions"]:checked');
+
+                if (!selectedAnswer) {
+                    showError('Пожалуйста, выберите ответ.');
+                    return;
+                }
+
+                const questionId = questions[currentQuestionIndex].id;
+
+                try {
+                    await fetch(`http://localhost:8080/quiz/${userUUID}/variant/${variantName}/question/${questionId}/accept`, {
+                        method: 'POST',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ answer: selectedAnswer.value })
+                    });
+
+                    currentQuestionIndex++;
+
+                    if (currentQuestionIndex < questions.length) {
+                        renderQuestion(questions[currentQuestionIndex]);
+                    } else {
+                        document.getElementById('submitButton').textContent = 'Узнать результаты';
+                        document.getElementById('submitButton').addEventListener('click', () => {
+                            window.location.href = `/quiz/${userUUID}/variant/${variantName}/results`;
+                        });
+                    }
+                } catch (error) {
+                    showError('Не удалось отправить ответ. Попробуйте снова.');
+                }
+            });
+        } catch (error) {
+            showError(error.message);
+        }
+
+        function renderQuestion(question) {
+            questionContainer.classList.remove('hidden');
+            const answersContainer = document.getElementById('answers');
+            document.getElementById('questionText').textContent = question.question;
+            answersContainer.innerHTML = '';
+
+            const shuffledAnswers = shuffle([question.answer, ...question.answers.map(a => a.answer)]);
+
+            shuffledAnswers.forEach(answer => {
+                const label = document.createElement('label');
+                label.className = 'block cursor-pointer';
+
+                const input = document.createElement('input');
+                input.type = 'radio';
+                input.name = 'answerOptions';
+                input.value = answer;
+                input.className = 'mr-2';
+
+                label.appendChild(input);
+                label.appendChild(document.createTextNode(answer));
+                answersContainer.appendChild(label);
+            });
+        }
+
+        function shuffle(array) {
+            for (let i = array.length - 1; i > 0; i--) {
+                const j = Math.floor(Math.random() * (i + 1));
+                [array[i], array[j]] = [array[j], array[i]];
+            }
+            return array;
+        }
+
+        function showError(message) {
+            errorMessage.textContent = message;
+            errorMessage.classList.remove('hidden');
+        }
+    });
+</script>
 </body>
 </html>

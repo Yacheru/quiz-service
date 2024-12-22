@@ -1,10 +1,87 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
-  <title>$Title$</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Список вариантов</title>
+    <script src="https://cdn.tailwindcss.com"></script>
 </head>
-<body>
-$END$
+<body class="bg-gray-100 flex items-center justify-center min-h-screen">
+<div class="absolute top-4 right-4">
+    <button id="logoutButton" class="bg-red-500 text-white px-4 py-2 rounded shadow hover:bg-red-600">Выйти</button>
+</div>
+<div class="bg-white p-8 rounded-lg shadow-md w-full max-w-2xl">
+    <h2 class="text-2xl font-bold mb-4 text-gray-800">Выбор варианта теста</h2>
+    <ul id="variantList" class="space-y-4"></ul>
+    <p id="errorMessage" class="text-red-500 text-sm mt-2 hidden"></p>
+</div>
+
+<script>
+    document.addEventListener('DOMContentLoaded', async () => {
+        const userUUID = localStorage.getItem('userUUID');
+        const errorMessage = document.getElementById('errorMessage');
+
+        if (!userUUID) {
+            showError('Пользователь не авторизован. Пожалуйста, выполните регистрацию.');
+            return;
+        }
+
+        document.getElementById('logoutButton').addEventListener('click', async () => {
+            await fetch('http://localhost:8080/logout', { method: 'POST' });
+            localStorage.removeItem('userUUID');
+            window.location.href = '/quiz/';
+        });
+
+        try {
+            const response = await fetch(`http://localhost:8080/quiz/${userUUID}/variant/list`);
+
+            if (!response.ok) {
+                if (response.status === 401) {
+                    return window.location.href = "/quiz/"
+                }
+
+                throw new Error('Не удалось получить варианты тестов.');
+            }
+
+            const responseData = await response.json();
+            const variants = responseData.data;
+            renderVariants(variants, userUUID);
+        } catch (error) {
+            showError(error.message);
+        }
+    });
+
+    function renderVariants(variants, userUUID) {
+        const variantList = document.getElementById('variantList');
+
+        variants.filter(variant => variant.questions.length > 0).forEach(variant => {
+            const listItem = document.createElement('li');
+            listItem.className = 'p-4 border rounded-md shadow-sm bg-gray-50 flex justify-between items-center';
+
+            const variantButton = document.createElement('button');
+            variantButton.className = 'text-lg font-semibold text-blue-600 hover:underline';
+            variantButton.textContent = variant.name;
+            variantButton.onclick = () => redirectToVariantPage(userUUID, variant.name);
+
+            const questionCount = document.createElement('span');
+            questionCount.className = 'text-sm text-gray-500';
+            questionCount.textContent = `${variant.questions.length} из 5 вопросов`;
+
+            listItem.appendChild(variantButton);
+            listItem.appendChild(questionCount);
+            variantList.appendChild(listItem);
+        });
+    }
+
+    function redirectToVariantPage(userUUID, variantName) {
+        window.location.href = `/quiz/${userUUID}/variant/${variantName}/`;
+    }
+
+    function showError(message) {
+        const errorMessage = document.getElementById('errorMessage');
+        errorMessage.textContent = message;
+        errorMessage.classList.remove('hidden');
+    }
+</script>
 </body>
 </html>

@@ -1,0 +1,8 @@
+DROP TABLE IF EXISTS user_answers;
+DROP TABLE IF EXISTS results;
+DROP TABLE IF EXISTS testing;
+DROP TABLE IF EXISTS auth;
+DROP TABLE IF EXISTS questions_and_answers;
+DROP TABLE IF EXISTS questions;
+DROP TABLE IF EXISTS variants;
+DROP TABLE IF EXISTS answers;
