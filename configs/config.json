@@ -1,0 +1,20 @@
+{
+  "debug": true,
+  "port": 8080,
+  "entry": "/quiz",
+
+  "db": {
+    "port": 5432,
+    "host": "quiz-postgres",
+    "user": "someuser",
+    "password": "veryveryverystrongpassword",
+    "database": "db_quiz"
+  },
+
+  "log": {
+    "httpLoggerPath": "./logs/http",
+    "dbLoggerPath": "./logs/db",
+    "maxSizeMb": 10,
+    "compressOldFiles": true
+  }
+}
