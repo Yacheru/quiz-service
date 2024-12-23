@@ -36,10 +36,9 @@
             const response = await fetch(`http://localhost:8080/quiz/${userUUID}/variant/list`);
 
             if (!response.ok) {
-                if (response.status === 401) {
-                    return window.location.href = "/quiz/"
+                if (response.status === 404) {
+                    throw new Error('Вариантов теста пока нет :/');
                 }
-
                 throw new Error('Не удалось получить варианты тестов.');
             }
 
