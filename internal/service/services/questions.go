@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"quiz-service/init/logger"
 	"strings"
 	"sync"
 
@@ -17,17 +18,21 @@ type Questions struct {
 	variantRepo  repository.VariantRepository
 	testingRepo  repository.TestingRepository
 
+	log logger.Logging
+
 	mu sync.Mutex
 }
 
 func NewQuestions(
 	questionRepo repository.QuestionsRepository,
 	variantRepo repository.VariantRepository,
-	testingRepo repository.TestingRepository) *Questions {
+	testingRepo repository.TestingRepository,
+	log logger.Logging) *Questions {
 	return &Questions{
 		questionRepo: questionRepo,
 		variantRepo:  variantRepo,
 		testingRepo:  testingRepo,
+		log:          log,
 		mu:           sync.Mutex{},
 	}
 }
@@ -46,7 +51,7 @@ func (q *Questions) QuestionAdd(ctx context.Context, variantId int, question *en
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 			return constants.ErrorQuestionAlreadyExists
 		}
-
+		q.log.ErrorF("QuestionAdd failed: %v", err)
 		return err
 	}
 	return nil
@@ -55,6 +60,7 @@ func (q *Questions) QuestionAdd(ctx context.Context, variantId int, question *en
 func (q *Questions) QuestionRemove(ctx context.Context, variantId int, question *entities.QuestionRemove) error {
 	num, err := q.questionRepo.QuestionRemove(ctx, variantId, question.Question)
 	if err != nil {
+		q.log.ErrorF("QuestionRemove failed: %v", err)
 		return err
 	}
 	if num == 0 {
@@ -70,6 +76,7 @@ func (q *Questions) QuestionGet(ctx context.Context, variantId, questionId int) 
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, constants.ErrorQuestionNotFound
 		}
+		q.log.ErrorF("QuestionGet failed: %v", err)
 		return nil, err
 	}
 	return questions, nil
@@ -81,6 +88,7 @@ func (q *Questions) QuestionAccept(ctx context.Context, variantId, userId int, a
 		if errors.Is(err, sql.ErrNoRows) {
 			return constants.ErrorTestNotFound
 		}
+		q.log.ErrorF("QuestionAccept-TestGet failed: %v", err)
 		return err
 	}
 
@@ -88,7 +96,7 @@ func (q *Questions) QuestionAccept(ctx context.Context, variantId, userId int, a
 		if errors.Is(err, sql.ErrNoRows) {
 			return constants.ErrorQuestionNotFound
 		}
-
+		q.log.ErrorF("QuestionAccept failed: %v", err)
 		return err
 	}
 

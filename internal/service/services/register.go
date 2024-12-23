@@ -4,6 +4,7 @@ import (
 	"context"
 	"database/sql"
 	"errors"
+	"quiz-service/init/logger"
 	"quiz-service/pkg/constants"
 	"strings"
 
@@ -17,11 +18,13 @@ import (
 type Register struct {
 	repo repository.RegisterRepository
 
+	log logger.Logging
+
 	hasher hash.Hasher
 }
 
-func NewRegister(repo repository.RegisterRepository, hasher hash.Hasher) *Register {
-	return &Register{repo: repo, hasher: hasher}
+func NewRegister(repo repository.RegisterRepository, hasher hash.Hasher, log logger.Logging) *Register {
+	return &Register{repo: repo, hasher: hasher, log: log}
 }
 
 func (r *Register) Register(ctx context.Context, register *entities.Register) (*entities.User, error) {
@@ -33,6 +36,7 @@ func (r *Register) Register(ctx context.Context, register *entities.Register) (*
 		if strings.Contains(err.Error(), "duplicate key value violates unique constraint") {
 			return nil, constants.ErrorUserAlreadyExists
 		}
+		r.log.ErrorF("Register failed: %v", err)
 		return nil, err
 	}
 	return user, nil
@@ -46,6 +50,7 @@ func (r *Register) Login(ctx context.Context, login *entities.Login) (*entities.
 		if errors.Is(err, sql.ErrNoRows) {
 			return nil, constants.ErrorUserNotFound
 		}
+		r.log.ErrorF("Login failed: %v", err)
 		return nil, err
 	}
 

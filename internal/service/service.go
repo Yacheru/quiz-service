@@ -2,6 +2,7 @@ package service
 
 import (
 	"context"
+	"quiz-service/init/logger"
 	"quiz-service/pkg/hash"
 
 	"quiz-service/internal/entities"
@@ -14,9 +15,6 @@ type QuestionsService interface {
 	QuestionRemove(ctx context.Context, variantId int, question *entities.QuestionRemove) error
 	QuestionGet(ctx context.Context, variantId, questionId int) (*entities.Question, error)
 	QuestionAccept(ctx context.Context, variantId, userId int, answer string) error
-}
-
-type TestingService interface {
 }
 
 type UserService interface {
@@ -40,18 +38,16 @@ type VariantService interface {
 
 type Service struct {
 	QuestionsService
-	TestingService
 	UserService
 	RegisterService
 	VariantService
 }
 
-func NewService(repo *repository.Repository, hasher hash.Hasher) *Service {
+func NewService(repo *repository.Repository, hasher hash.Hasher, log logger.Logging) *Service {
 	return &Service{
-		QuestionsService: service.NewQuestions(repo.QuestionsRepository, repo.VariantRepository, repo.TestingRepository),
-		TestingService:   service.NewTesting(repo.TestingRepository),
-		UserService:      service.NewUser(repo.UserRepository),
-		RegisterService:  service.NewRegister(repo.RegisterRepository, hasher),
-		VariantService:   service.NewVariant(repo.VariantRepository),
+		QuestionsService: service.NewQuestions(repo.QuestionsRepository, repo.VariantRepository, repo.TestingRepository, log),
+		UserService:      service.NewUser(repo.UserRepository, log),
+		RegisterService:  service.NewRegister(repo.RegisterRepository, hasher, log),
+		VariantService:   service.NewVariant(repo.VariantRepository, log),
 	}
 }

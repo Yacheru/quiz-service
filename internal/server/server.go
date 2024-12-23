@@ -19,13 +19,12 @@ type HTTPServer struct {
 func NewHTTPServer(ctx context.Context, cfg *config.Config, httpLogger, dbLogger, quizLogger *logger.Logger) (*HTTPServer, error) {
 	db, err := postgres.InitPostgresConnection(ctx, cfg, quizLogger)
 	if err != nil {
-		quizLogger.Error("postgres:" + err.Error())
 		return nil, err
 	}
 
 	engine := setupGin(cfg.Debug)
 	entry := engine.Group(cfg.Entry)
-	router.InitRouterAndComponents(entry, db, cfg, httpLogger, dbLogger).Routes()
+	router.InitRouterAndComponents(entry, db, cfg, httpLogger, dbLogger, quizLogger).Routes()
 
 	server := &http.Server{
 		Addr:           fmt.Sprintf(":%d", cfg.Port),

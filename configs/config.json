@@ -6,7 +6,7 @@
 
   "db": {
     "port": 5432,
-    "host": "postgres",
+    "host": "localhost",
     "user": "someuser",
     "password": "veryveryverystrongpassword",
     "database": "db_quiz"

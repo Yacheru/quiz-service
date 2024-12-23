@@ -18,10 +18,10 @@ type Router struct {
 	handler *handlers.Handler
 }
 
-func InitRouterAndComponents(router *gin.RouterGroup, db *sqlx.DB, cfg *config.Config, httpLogger, dbLogger *logger.Logger) *Router {
+func InitRouterAndComponents(router *gin.RouterGroup, db *sqlx.DB, cfg *config.Config, httpLogger, dbLogger, quizLogger *logger.Logger) *Router {
 	repo := repository.NewRepository(db, dbLogger)
 	hasher := hash.NewSHA512Hasher(cfg.PasswordSalt)
-	serv := service.NewService(repo, hasher)
+	serv := service.NewService(repo, hasher, quizLogger)
 	handler := handlers.NewHandler(serv, httpLogger)
 
 	return &Router{
